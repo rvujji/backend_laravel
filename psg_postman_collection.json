@@ -1,0 +1,589 @@
+{
+  "info": {
+    "name": "psg Laravel API Collection",
+    "_postman_id": "ekrushi-laravel-api-v1",
+    "description": "Integrated Postman collection for Laravel + Sanctum authentication and Workshop Category APIs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api/v1"
+    },
+    {
+      "key": "auth_token",
+      "value": ""
+    },
+    {
+      "key": "category_id",
+      "value": "1"
+    },
+    {
+      "key": "workshop_id",
+      "value": ""
+    },
+    {
+      "key": "owner_id",
+      "value": "1"
+    },
+	{
+	  "key": "enrollment_id",
+	  "value": ""
+	}
+  ],
+  "item": [
+    {
+      "name": "Auth - Register",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Raj\",\n  \"email\": \"raj_test@example.com\",\n  \"phone\": \"9999999999\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/register",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Register Success', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "let response = pm.response.json();",
+              "",
+              "if (response.data && response.data.token) {",
+              "    pm.collectionVariables.set('auth_token', response.data.token);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth - Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@skillkart.test\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login Success', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "let response = pm.response.json();",
+              "",
+              "if (response.data && response.data.token) {",
+              "    pm.collectionVariables.set('auth_token', response.data.token);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth - Current User",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/auth/me",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "auth",
+            "me"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Category - Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Robotics1\",\n  \"slug\": \"robotics1\",\n  \"description\": \"Robotics workshops1\",\n  \"is_active\": true\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/categories",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "categories"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "let response = pm.response.json();",
+              "",
+              "if (response.data && response.data.id) {",
+              "    pm.collectionVariables.set('category_id', response.data.id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Category - List",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/categories",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "categories"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Category - Update",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Advanced Robotics\",\n  \"slug\": \"advanced-robotics\",\n  \"description\": \"Updated robotics category\",\n  \"is_active\": true\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/categories/{{category_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "categories",
+            "{{category_id}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Workshop - Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"category_id\": {{category_id}},\n  \"owner_id\": {{owner_id}},\n  \"title\": \"ROS2 Robotics Bootcamp\",\n  \"slug\": \"ros2-robotics-bootcamp\",\n  \"short_description\": \"Learn ROS2 fundamentals\",\n  \"full_description\": \"Complete robotics engineering program\",\n  \"status\": \"published\",\n  \"price\": 4999,\n  \"is_featured\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/workshops",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "workshops"
+          ]
+        }
+      },
+	  "event": [
+		{
+		  "listen": "test",
+		  "script": {
+			"type": "text/javascript",
+			"exec": [
+			  "pm.test('Workshop Create Success', function () {",
+			  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+			  "});",
+			  "",
+			  "let response = pm.response.json();",
+			  "let data = response.data || response;",
+			  "",
+			  "if (data.id) {",
+			  "    pm.collectionVariables.set('workshop_id', data.id);",
+			  "}"
+			]
+		  }
+		}
+	  ]
+    },
+    {
+      "name": "Workshop - List",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/workshops",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "workshops"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Workshop - Update",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"category_id\": {{category_id}},\n  \"title\": \"Advanced ROS2 Robotics Bootcamp\",\n  \"slug\": \"advanced-ros2-robotics-bootcamp\",\n  \"short_description\": \"Advanced ROS2 training1\",\n  \"full_description\": \"Updated robotics workshop1\",\n  \"status\": \"published\",\n  \"price\": 7999,\n  \"is_featured\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/workshops/{{workshop_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "workshops",
+            "{{workshop_id}}"
+          ]
+        }
+      }
+    },
+	{
+  "name": "Enrollment - Create",
+  "request": {
+    "method": "POST",
+    "header": [
+      {
+        "key": "Content-Type",
+        "value": "application/json"
+      },
+      {
+        "key": "Accept",
+        "value": "application/json"
+      },
+      {
+        "key": "Authorization",
+        "value": "Bearer {{auth_token}}"
+      }
+    ],
+    "body": {
+      "mode": "raw",
+      "raw": "{\n  \"workshop_id\": {{workshop_id}}\n}",
+      "options": {
+        "raw": {
+          "language": "json"
+        }
+      }
+    },
+    "url": {
+      "raw": "{{base_url}}/enrollments",
+      "host": [
+        "{{base_url}}"
+      ],
+      "path": [
+        "enrollments"
+      ]
+    }
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('Enrollment Create Success', function () {",
+          "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+          "});",
+          "",
+          "let response = pm.response.json();",
+          "let data = response.data || response;",
+          "",
+          "if (data.id) {",
+          "    pm.collectionVariables.set('enrollment_id', data.id);",
+          "}"
+        ]
+      }
+    }
+  ]
+},
+{
+  "name": "Enrollment - List",
+  "request": {
+    "method": "GET",
+    "header": [
+      {
+        "key": "Accept",
+        "value": "application/json"
+      },
+      {
+        "key": "Authorization",
+        "value": "Bearer {{auth_token}}"
+      }
+    ],
+    "url": {
+      "raw": "{{base_url}}/enrollments",
+      "host": [
+        "{{base_url}}"
+      ],
+      "path": [
+        "enrollments"
+      ]
+    }
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('Enrollment List Success', function () {",
+          "    pm.response.to.have.status(200);",
+          "});"
+        ]
+      }
+    }
+  ]
+},
+{
+  "name": "Enrollment - Delete",
+  "request": {
+    "method": "DELETE",
+    "header": [
+      {
+        "key": "Accept",
+        "value": "application/json"
+      },
+      {
+        "key": "Authorization",
+        "value": "Bearer {{auth_token}}"
+      }
+    ],
+    "url": {
+      "raw": "{{base_url}}/enrollments/{{enrollment_id}}",
+      "host": [
+        "{{base_url}}"
+      ],
+      "path": [
+        "enrollments",
+        "{{enrollment_id}}"
+      ]
+    }
+  }
+},
+    {
+      "name": "Workshop - Delete",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/workshops/{{workshop_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "workshops",
+            "{{workshop_id}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Category - Delete",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/categories/{{category_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "categories",
+            "{{category_id}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Auth - Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/auth/logout",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "auth",
+            "logout"
+          ]
+        }
+      }
+    }
+  ]
+}
