@@ -19,8 +19,7 @@ class WorkshopEnrollmentController extends Controller
 {
     public function __construct(
         protected WorkshopEnrollmentService $service
-    ) {
-    }
+    ) {}
 
     /*
     |--------------------------------------------------------------------------
@@ -59,6 +58,26 @@ class WorkshopEnrollmentController extends Controller
 
         return ApiResponse::success(
             'Enrollments fetched successfully',
+            $enrollments
+        );
+    }
+
+    /*
+|--------------------------------------------------------------------------
+| MY ENROLLMENTS
+|--------------------------------------------------------------------------
+*/
+
+    public function myEnrollments(
+        Request $request
+    ): JsonResponse {
+
+        $enrollments = $this->service->myEnrollments(
+            $request->user()
+        );
+
+        return ApiResponse::success(
+            'My enrollments fetched successfully',
             $enrollments
         );
     }

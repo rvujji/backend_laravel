@@ -24,8 +24,7 @@ class AuthController extends Controller
 
     public function __construct(
         protected AuthService $authService
-    ) {
-    }
+    ) {}
 
     /*
     |--------------------------------------------------------------------------
@@ -93,9 +92,59 @@ class AuthController extends Controller
         Request $request
     ): JsonResponse {
 
+        $user = $request->user();
+
+        $user->load('roles');
+
         return ApiResponse::success(
+
             'Authenticated user',
-            $request->user()
+
+            [
+
+                'id' => $user->id,
+
+                'name' => $user->name,
+
+                'email' => $user->email,
+
+                'phone' => $user->phone,
+
+                'status' => $user->status,
+
+                'email_verified_at' =>
+                $user->email_verified_at,
+
+                'phone_verified_at' =>
+                $user->phone_verified_at,
+
+                'last_login_at' =>
+                $user->last_login_at,
+
+                'created_at' =>
+                $user->created_at,
+
+                'updated_at' =>
+                $user->updated_at,
+
+                'deleted_at' =>
+                $user->deleted_at,
+
+                /*
+        |--------------------------------------------------------------------------
+        | RBAC
+        |--------------------------------------------------------------------------
+        */
+
+                'roles' =>
+
+                $user->getRoleNames(),
+
+                'permissions' =>
+
+                $user->getAllPermissions()
+                    ->pluck('name'),
+            ]
         );
     }
 }
