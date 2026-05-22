@@ -33,7 +33,7 @@
   ],
   "item": [
 	{
-	  "name": "Dashboard",
+	  "name": "0 Auth",
 	  "item": [
 		{
       "name": "0 Auth - Register",
@@ -84,6 +84,7 @@
         }
       ]
     },
+	
     {
       "name": "1 Auth - Login",
       "request": {
@@ -135,6 +136,348 @@
     }
 	  ]
 	},
+	{
+  "name": "Me APIs",
+
+  "item": [
+
+    {
+      "name": "2 Me - My Enrollments",
+
+      "request": {
+
+        "method": "GET",
+
+        "header": [
+
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+
+        "url": {
+
+          "raw": "{{base_url}}/me/enrollments",
+
+          "host": [
+            "{{base_url}}"
+          ],
+
+          "path": [
+            "me",
+            "enrollments"
+          ]
+        }
+      },
+
+      "event": [
+
+        {
+          "listen": "test",
+
+          "script": {
+
+            "type": "text/javascript",
+
+            "exec": [
+
+              "pm.test('My enrollments success', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+
+              "",
+
+              "const response = pm.response.json();",
+
+              "",
+
+              "pm.test('Paginated enrollment response exists', function () {",
+              "    pm.expect(response).to.have.property('data');",
+              "    pm.expect(response.data).to.have.property('data');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+},
+	{
+  "name": "Admin APIs",
+  "item": [
+
+    {
+      "name": "Admin - Enrollments List",
+
+      "request": {
+
+        "method": "GET",
+
+        "header": [
+
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+
+        "url": {
+
+          "raw": "{{base_url}}/admin/enrollments",
+
+          "host": [
+            "{{base_url}}"
+          ],
+
+          "path": [
+            "admin",
+            "enrollments"
+          ]
+        }
+      },
+
+      "event": [
+
+        {
+          "listen": "test",
+
+          "script": {
+
+            "type": "text/javascript",
+
+            "exec": [
+
+              "pm.test('Admin enrollments list success', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+
+              "",
+
+              "const response = pm.response.json();",
+
+              "",
+
+              "pm.test('Response contains paginated data', function () {",
+              "    pm.expect(response).to.have.property('data');",
+              "    pm.expect(response.data).to.have.property('data');",
+              "    pm.expect(response.data.data).to.be.an('array');",
+              "});",
+
+              "",
+
+              "if (response.data.data.length > 0) {",
+
+              "    pm.test('Enrollment fields exist', function () {",
+
+              "        const item = response.data.data[0];",
+
+              "        pm.expect(item).to.have.property('id');",
+              "        pm.expect(item).to.have.property('student_id');",
+              "        pm.expect(item).to.have.property('workshop_id');",
+              "        pm.expect(item).to.have.property('status');",
+
+              "    });",
+
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Admin - Enrollments Search",
+
+      "request": {
+
+        "method": "GET",
+
+        "header": [
+
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+
+        "url": {
+
+          "raw": "{{base_url}}/admin/enrollments?search=raj",
+
+          "host": [
+            "{{base_url}}"
+          ],
+
+          "path": [
+            "admin",
+            "enrollments"
+          ],
+
+          "query": [
+
+            {
+              "key": "search",
+              "value": "raj"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "name": "Admin - Enrollments Status Filter",
+
+      "request": {
+
+        "method": "GET",
+
+        "header": [
+
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+
+        "url": {
+
+          "raw": "{{base_url}}/admin/enrollments?status=confirmed",
+
+          "host": [
+            "{{base_url}}"
+          ],
+
+          "path": [
+            "admin",
+            "enrollments"
+          ],
+
+          "query": [
+
+            {
+              "key": "status",
+              "value": "confirmed"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "name": "Admin - Enrollments Workshop Filter",
+
+      "request": {
+
+        "method": "GET",
+
+        "header": [
+
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+
+        "url": {
+
+          "raw": "{{base_url}}/admin/enrollments?workshop_id={{workshop_id}}",
+
+          "host": [
+            "{{base_url}}"
+          ],
+
+          "path": [
+            "admin",
+            "enrollments"
+          ],
+
+          "query": [
+
+            {
+              "key": "workshop_id",
+              "value": "{{workshop_id}}"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "name": "Admin - Enrollments Pagination",
+
+      "request": {
+
+        "method": "GET",
+
+        "header": [
+
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}"
+          }
+        ],
+
+        "url": {
+
+          "raw": "{{base_url}}/admin/enrollments?page=1&per_page=5",
+
+          "host": [
+            "{{base_url}}"
+          ],
+
+          "path": [
+            "admin",
+            "enrollments"
+          ],
+
+          "query": [
+
+            {
+              "key": "page",
+              "value": "1"
+            },
+
+            {
+              "key": "per_page",
+              "value": "5"
+            }
+          ]
+        }
+      }
+    }
+  ]
+},
     {
       "name": "Auth - Current User",
       "request": {

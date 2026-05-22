@@ -94,3 +94,9 @@ php artisan make:request StoreWorkshopRequest
 php artisan make:request UpdateWorkshopRequest
 
 php artisan make:controller API/V1/WorkshopController
+
+# Clear cache for laravel
+php artisan optimize:clear
+php artisan route:clear
+php artisan config:clear
+php artisan cache:clear

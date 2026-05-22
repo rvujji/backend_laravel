@@ -8,6 +8,7 @@ use App\Http\Controllers\API\V1\WorkshopController;
 use App\Http\Controllers\API\V1\WorkshopEnrollmentController;
 use App\Http\Controllers\API\V1\PublicWorkshopController;
 use App\Http\Controllers\API\V1\DashboardController;
+use App\Http\Controllers\API\V1\AdminEnrollmentController;
 
 Route::prefix('v1')->group(function () {
 
@@ -63,6 +64,19 @@ Route::prefix('v1')->group(function () {
             'workshops',
             WorkshopController::class
         );
+        Route::prefix('admin')
+
+            ->middleware('role:admin')
+
+            ->group(function () {
+
+                Route::get(
+
+                    '/enrollments',
+
+                    [AdminEnrollmentController::class, 'index']
+                );
+            });
         Route::prefix('me')->group(function () {
 
             Route::get(
