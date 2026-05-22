@@ -6,29 +6,28 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Workshop extends Model
 {
     use SoftDeletes;
 
     protected $fillable = [
-
         'category_id',
         'owner_id',
-
         'title',
         'slug',
-
         'short_description',
         'full_description',
-
+        'thumbnail',
+        'video_url',
         'status',
-
         'price',
-
         'is_featured',
     ];
-
+    protected $appends = [
+        'thumbnail_url',
+    ];
     /*
     |--------------------------------------------------------------------------
     | RELATIONSHIPS
@@ -56,6 +55,17 @@ class Workshop extends Model
         return $this->hasMany(
             WorkshopEnrollment::class,
             'workshop_id'
+        );
+    }
+
+    public function getThumbnailUrlAttribute()
+    {
+        if (!$this->thumbnail) {
+            return null;
+        }
+
+        return asset(
+            'storage/' . $this->thumbnail
         );
     }
 }

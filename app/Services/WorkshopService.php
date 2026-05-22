@@ -39,6 +39,17 @@ class WorkshopService
     ): Workshop {
 
         $data['owner_id'] = $owner->id;
+        if (
+            isset($data['thumbnail'])
+        ) {
+
+            $data['thumbnail'] =
+
+                $data['thumbnail']->store(
+                    'workshops',
+                    'public'
+                );
+        }
 
         return Workshop::create($data);
     }
@@ -55,7 +66,17 @@ class WorkshopService
     ): Workshop {
 
         $workshop->update($data);
+        if (
+            isset($data['thumbnail'])
+        ) {
 
+            $data['thumbnail'] =
+
+                $data['thumbnail']->store(
+                    'workshops',
+                    'public'
+                );
+        }
         return $workshop->refresh();
     }
 

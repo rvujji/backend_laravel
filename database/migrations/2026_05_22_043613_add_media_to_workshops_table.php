@@ -28,8 +28,16 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('workshops', function (Blueprint $table) {
-            //
-        });
+        Schema::table(
+            'workshops',
+
+            function (Blueprint $table) {
+
+                $table->dropColumn([
+                    'thumbnail',
+                    'video_url'
+                ]);
+            }
+        );
     }
 };

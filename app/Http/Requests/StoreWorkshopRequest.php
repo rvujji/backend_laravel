@@ -67,7 +67,19 @@ class StoreWorkshopRequest extends FormRequest
             'is_featured' => [
                 'nullable',
                 'boolean'
-            ]
+            ],
+
+            'thumbnail' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:2048'
+            ],
+
+            'video_url' => [
+                'nullable',
+                'url'
+            ],
         ];
     }
 }
