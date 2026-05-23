@@ -65,7 +65,7 @@ class WorkshopService
         array $data
     ): Workshop {
 
-        $workshop->update($data);
+
         if (
             isset($data['thumbnail'])
         ) {
@@ -77,6 +77,7 @@ class WorkshopService
                     'public'
                 );
         }
+        $workshop->update($data);
         return $workshop->refresh();
     }
 
