@@ -5,10 +5,18 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\V1\AuthController;
 use App\Http\Controllers\API\V1\WorkshopCategoryController;
 use App\Http\Controllers\API\V1\WorkshopController;
-use App\Http\Controllers\API\V1\WorkshopEnrollmentController;
 use App\Http\Controllers\API\V1\PublicWorkshopController;
 use App\Http\Controllers\API\V1\DashboardController;
-use App\Http\Controllers\API\V1\AdminEnrollmentController;
+use App\Http\Controllers\API\V1\WorkshopOfferingController;
+use App\Http\Controllers\API\V1\WorkshopSessionController;
+use App\Http\Controllers\API\V1\PublicOfferingController;
+use App\Http\Controllers\API\V1\MyOfferingEnrollmentController;
+use App\Http\Controllers\API\V1\AdminOfferingEnrollmentController;
+use App\Http\Controllers\API\V1\MySessionReservationController;
+use App\Http\Controllers\API\V1\AdminSessionReservationController;
+use App\Http\Controllers\API\V1\WorkshopAttendanceController;
+use App\Http\Controllers\API\V1\MyAttendanceController;
+use App\Http\Controllers\API\V1\WorkshopCertificateController;
 
 Route::prefix('v1')->group(function () {
 
@@ -48,8 +56,43 @@ Route::prefix('v1')->group(function () {
             '/featured-workshops',
             [PublicWorkshopController::class, 'featuredWorkshops']
         );
-    });
+        /*
+        |--------------------------------------------------------------------------
+        | Offerings
+        |--------------------------------------------------------------------------
+        */
 
+        Route::get(
+            'offerings',
+            [PublicOfferingController::class, 'index']
+        );
+
+        Route::get(
+            'offerings/{slug}',
+            [PublicOfferingController::class, 'show']
+        );
+
+        Route::get(
+            'workshops/{slug}/offerings',
+            [PublicOfferingController::class, 'workshopOfferings']
+        );
+
+        Route::get(
+            'certificates/{certificate}/download',
+            [WorkshopCertificateController::class, 'download']
+        );
+    });
+    /*
+    |--------------------------------------------------------------------------
+    | HEALTH CHECK
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/health', function () {
+        return response()->json([
+            'status' => 'ok',
+            'time' => now(),
+        ]);
+    });
     /*
     |--------------------------------------------------------------------------
     | PROTECTED ROUTES
@@ -59,41 +102,94 @@ Route::prefix('v1')->group(function () {
         Route::apiResource(
             'categories',
             WorkshopCategoryController::class
-        )->middleware('role:admin');
+        )->middleware('role:admin|trainer');
         Route::apiResource(
             'workshops',
             WorkshopController::class
         );
         Route::prefix('admin')
 
-            ->middleware('role:admin')
+            ->middleware('role:admin|trainer')
 
             ->group(function () {
 
+                Route::apiResource(
+                    'offerings',
+                    WorkshopOfferingController::class
+                );
+
+                Route::apiResource(
+                    'sessions',
+                    WorkshopSessionController::class
+                );
                 Route::get(
+                    'offering-enrollments',
+                    [AdminOfferingEnrollmentController::class, 'index']
+                );
 
-                    '/enrollments',
+                Route::get(
+                    'session-reservations',
+                    [AdminSessionReservationController::class, 'index']
+                );
 
-                    [AdminEnrollmentController::class, 'index']
+                Route::get(
+                    'attendances',
+                    [WorkshopAttendanceController::class, 'index']
+                );
+
+                Route::post(
+                    'reservations/{reservation}/attendance',
+                    [WorkshopAttendanceController::class, 'store']
+                );
+
+                Route::post(
+                    'enrollments/{enrollment}/certificate',
+                    [WorkshopCertificateController::class, 'issue']
                 );
             });
         Route::prefix('me')->group(function () {
 
+
             Route::get(
-                '/enrollments',
-                [
-                    WorkshopEnrollmentController::class,
-                    'myEnrollments'
-                ]
+                'offering-enrollments',
+                [MyOfferingEnrollmentController::class, 'index']
+            );
+
+            Route::post(
+                'offerings/{offering}/enroll',
+                [MyOfferingEnrollmentController::class, 'enroll']
+            );
+
+            Route::delete(
+                'offering-enrollments/{enrollment}',
+                [MyOfferingEnrollmentController::class, 'destroy']
+            );
+
+            Route::get(
+                'session-reservations',
+                [MySessionReservationController::class, 'index']
+            );
+
+            Route::post(
+                'sessions/{session}/reserve',
+                [MySessionReservationController::class, 'reserve']
+            );
+
+            Route::delete(
+                'session-reservations/{reservation}',
+                [MySessionReservationController::class, 'destroy']
+            );
+
+            Route::get(
+                'attendances',
+                [MyAttendanceController::class, 'index']
+            );
+
+            Route::get(
+                'certificates',
+                [WorkshopCertificateController::class, 'myCertificates']
             );
         });
-        Route::apiResource(
-            'enrollments',
-            WorkshopEnrollmentController::class
-        )->only([
-            'store',
-            'destroy'
-        ]);
 
         Route::prefix('dashboard')
             ->middleware('role:admin|trainer')

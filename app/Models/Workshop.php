@@ -50,14 +50,6 @@ class Workshop extends Model
         );
     }
 
-    public function enrollments(): HasMany
-    {
-        return $this->hasMany(
-            WorkshopEnrollment::class,
-            'workshop_id'
-        );
-    }
-
     public function getThumbnailUrlAttribute()
     {
         if (!$this->thumbnail) {
@@ -67,5 +59,10 @@ class Workshop extends Model
         return asset(
             'storage/' . $this->thumbnail
         );
+    }
+
+    public function offerings()
+    {
+        return $this->hasMany(WorkshopOffering::class);
     }
 }

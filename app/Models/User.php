@@ -62,10 +62,10 @@ class User extends Authenticatable
         );
     }
 
-    public function enrollments(): HasMany
+    public function workshopOfferingEnrollments()
     {
         return $this->hasMany(
-            WorkshopEnrollment::class,
+            WorkshopOfferingEnrollment::class,
             'student_id'
         );
     }
