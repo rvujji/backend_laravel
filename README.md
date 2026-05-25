@@ -1,3 +1,4 @@
+php artisan serve 
 composer require barryvdh/laravel-dompdf
 php artisan migrate:fresh
 php artisan db:seed
