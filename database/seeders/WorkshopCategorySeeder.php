@@ -7,16 +7,11 @@ use Illuminate\Database\Seeder;
 use App\Models\WorkshopCategory;
 
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
 
 class WorkshopCategorySeeder extends Seeder
 {
     public function run(): void
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        DB::table('workshops')->truncate();
-        DB::table('workshop_categories')->truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         $categories = [
 

@@ -4,7 +4,8 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Models\Workshop;
-use App\Models\WorkshopEnrollment;
+use App\Models\WorkshopOffering;
+use App\Models\WorkshopOfferingEnrollment;
 
 class DashboardService
 {
@@ -18,16 +19,23 @@ class DashboardService
     {
         return [
 
-            'total_students' => User::role('student')->count(),
+            'total_students' =>
+            User::role('student')->count(),
 
-            'total_workshops' => Workshop::count(),
+            'total_workshops' =>
+            Workshop::count(),
 
-            'published_workshops' => Workshop::where(
+            'published_workshops' =>
+            Workshop::where(
                 'status',
                 'published'
             )->count(),
 
-            'total_enrollments' => WorkshopEnrollment::count(),
+            'total_offerings' =>
+            WorkshopOffering::count(),
+
+            'total_enrollments' =>
+            WorkshopOfferingEnrollment::count(),
         ];
     }
 
@@ -39,11 +47,12 @@ class DashboardService
 
     public function recentEnrollments()
     {
-        return WorkshopEnrollment::query()
+        return WorkshopOfferingEnrollment::query()
 
             ->with([
                 'student:id,name',
-                'workshop:id,title'
+                'offering:id,workshop_id,title',
+                'offering.workshop:id,title',
             ])
 
             ->latest()
@@ -56,7 +65,8 @@ class DashboardService
 
                 return [
 
-                    'id' => $enrollment->id,
+                    'id' =>
+                    $enrollment->id,
 
                     'student_id' =>
                     $enrollment->student_id,
@@ -67,14 +77,44 @@ class DashboardService
                         ($enrollment->student->name ?? '')
                     ),
 
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Offering
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'offering_id' =>
+                    $enrollment->offering?->id,
+
+                    'offering_title' =>
+                    $enrollment->offering?->title,
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Workshop
+                    |--------------------------------------------------------------------------
+                    */
+
                     'workshop_id' =>
-                    $enrollment->workshop_id,
+                    $enrollment->offering?->workshop?->id,
 
                     'workshop_title' =>
-                    $enrollment->workshop->title ?? null,
+                    $enrollment
+                        ->offering
+                        ?->workshop
+                        ?->title,
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Enrollment
+                    |--------------------------------------------------------------------------
+                    */
 
                     'status' =>
                     $enrollment->status,
+
+                    'completion_status' =>
+                    $enrollment->completion_status,
 
                     'created_at' =>
                     $enrollment->created_at,
@@ -106,13 +146,17 @@ class DashboardService
 
                 return [
 
-                    'id' => $workshop->id,
+                    'id' =>
+                    $workshop->id,
 
-                    'title' => $workshop->title,
+                    'title' =>
+                    $workshop->title,
 
-                    'slug' => $workshop->slug,
+                    'slug' =>
+                    $workshop->slug,
 
-                    'status' => $workshop->status,
+                    'status' =>
+                    $workshop->status,
 
                     'owner_id' =>
                     $workshop->owner_id,

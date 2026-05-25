@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 
 use App\Models\WorkshopSession;
 
-use App\Services\WorkshopSessionReservationService;
+use App\Services\WorkshopSessionService;
 
 use App\Http\Requests\StoreWorkshopSessionRequest;
 use App\Http\Requests\UpdateWorkshopSessionRequest;
@@ -17,7 +17,7 @@ use App\Http\Resources\WorkshopSessionResource;
 class WorkshopSessionController extends Controller
 {
     public function __construct(
-        protected WorkshopSessionReservationService $service
+        protected WorkshopSessionService $service
     ) {}
 
     public function index()
