@@ -20,6 +20,13 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             WorkshopCategorySeeder::class,
             UsersSeeder::class,
+            WorkshopSeeder::class,
+            WorkshopOfferingSeeder::class,
+            WorkshopSessionSeeder::class,
+            WorkshopOfferingEnrollmentSeeder::class,
+            WorkshopSessionReservationSeeder::class,
+            WorkshopAttendanceSeeder::class,
+            WorkshopCertificateSeeder::class,
         ]);
     }
 }

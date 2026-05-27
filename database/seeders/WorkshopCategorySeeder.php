@@ -24,6 +24,10 @@ class WorkshopCategorySeeder extends Seeder
                 'name' => 'Artificial Intelligence',
                 'description' => 'AI and machine learning programs'
             ],
+            [
+                'name' => 'AI',
+                'description' => 'AI and machine learning programs'
+            ],
 
             [
                 'name' => 'Electronics',
