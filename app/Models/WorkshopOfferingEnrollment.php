@@ -71,6 +71,8 @@ class WorkshopOfferingEnrollment extends Model
         );
     }
 
+    
+
     public function reservations()
     {
         return $this->hasMany(

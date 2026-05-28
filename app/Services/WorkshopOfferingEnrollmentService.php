@@ -12,7 +12,7 @@ class WorkshopOfferingEnrollmentService
         int $studentId
     ): WorkshopOfferingEnrollment {
 
-        return WorkshopOfferingEnrollment::firstOrCreate(
+        $enrollment = WorkshopOfferingEnrollment::firstOrCreate(
             [
                 'workshop_offering_id' => $offering->id,
                 'student_id' => $studentId,
@@ -31,6 +31,12 @@ class WorkshopOfferingEnrollmentService
                 'enrolled_at' => now(),
             ]
         );
+
+        app(EnrollmentProgressService::class)
+
+            ->recalculate($enrollment);
+
+        return $enrollment;
     }
 
     public function cancel(

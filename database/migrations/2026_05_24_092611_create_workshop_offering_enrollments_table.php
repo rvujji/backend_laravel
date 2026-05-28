@@ -64,6 +64,14 @@ return new class extends Migration
                 $table->boolean('certificate_issued')
                     ->default(false);
 
+                $table->integer(
+                    'total_sessions'
+                )->default(0);
+
+                $table->integer(
+                    'attended_sessions'
+                )->default(0);
+
                 /*
                 |--------------------------------------------------------------------------
                 | Audit

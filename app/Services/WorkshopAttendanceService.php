@@ -7,6 +7,7 @@ use Exception;
 use App\Models\WorkshopAttendance;
 use App\Models\WorkshopSessionReservation;
 use App\Services\WorkshopCompletionService;
+use App\Services\EnrollmentProgressService;
 
 class WorkshopAttendanceService
 {
@@ -81,6 +82,12 @@ class WorkshopAttendanceService
             $data['marked_by'] ?? null,
         ]);
 
+        app(EnrollmentProgressService::class)
+
+            ->recalculate(
+                $reservation->enrollment
+            );
+
         /*
         |--------------------------------------------------------------------------
         | Sync Reservation
@@ -129,17 +136,13 @@ class WorkshopAttendanceService
             $data['status'],
         ]);
 
-        /*
-    |--------------------------------------------------------------------------
-    | TODO
-    |--------------------------------------------------------------------------
-    |
-    | Recalculate:
-    | - progress
-    | - completion
-    | - certificate eligibility
-    |
-    */
+        app(EnrollmentProgressService::class)
+
+            ->recalculate(
+                $attendance
+                    ->reservation
+                    ->enrollment
+            );
 
         return $attendance->fresh();
     }

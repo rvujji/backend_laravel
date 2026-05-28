@@ -79,7 +79,7 @@ class WorkshopOffering extends Model
 
     public function sessions()
     {
-        return $this->hasMany(WorkshopSession::class);
+        return $this->hasMany(WorkshopSession::class, 'workshop_offering_id');
     }
 
     public function enrollments()

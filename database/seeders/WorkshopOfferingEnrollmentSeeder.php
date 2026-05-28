@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use App\Models\WorkshopOffering;
 use App\Models\WorkshopOfferingEnrollment;
+use App\Services\EnrollmentProgressService;
 
 class WorkshopOfferingEnrollmentSeeder extends Seeder
 {
@@ -21,7 +22,7 @@ class WorkshopOfferingEnrollmentSeeder extends Seeder
 
             foreach ($offerings->take(2) as $offering) {
 
-                WorkshopOfferingEnrollment::create([
+                $enrollment = WorkshopOfferingEnrollment::create([
 
                     'workshop_offering_id' =>
                     $offering->id,
@@ -35,6 +36,9 @@ class WorkshopOfferingEnrollmentSeeder extends Seeder
                     'completion_status' =>
                     'in_progress',
                 ]);
+
+                app(EnrollmentProgressService::class)
+                    ->recalculate($enrollment);
             }
         }
     }
