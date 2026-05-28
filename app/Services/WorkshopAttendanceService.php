@@ -108,4 +108,39 @@ class WorkshopAttendanceService
 
         return $attendance->fresh();
     }
+
+    public function updateAttendance(
+        WorkshopAttendance $attendance,
+        array $data
+    ): WorkshopAttendance {
+
+        /*
+    |--------------------------------------------------------------------------
+    | Prevent Editing Locked Attendance
+    |--------------------------------------------------------------------------
+    */
+
+        // Optional future rule:
+        // if certificate already issued
+
+        $attendance->update([
+
+            'status' =>
+            $data['status'],
+        ]);
+
+        /*
+    |--------------------------------------------------------------------------
+    | TODO
+    |--------------------------------------------------------------------------
+    |
+    | Recalculate:
+    | - progress
+    | - completion
+    | - certificate eligibility
+    |
+    */
+
+        return $attendance->fresh();
+    }
 }

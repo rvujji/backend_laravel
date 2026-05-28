@@ -35,6 +35,11 @@ extends Controller
                 'offering.workshop',
             ])
             ->where('student_id', auth()->id())
+            ->where(
+                'status',
+                '!=',
+                'cancelled'
+            )
             ->latest()
             ->paginate();
 

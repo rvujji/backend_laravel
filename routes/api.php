@@ -142,6 +142,22 @@ Route::prefix('v1')->group(function () {
                     [WorkshopAttendanceController::class, 'store']
                 );
 
+                Route::patch(
+                    'attendances/{attendance}',
+                    [
+                        WorkshopAttendanceController::class,
+                        'update',
+                    ]
+                );
+
+                Route::get(
+                    'attendance-filters',
+                    [
+                        WorkshopAttendanceController::class,
+                        'filters',
+                    ]
+                );
+
                 Route::post(
                     'enrollments/{enrollment}/certificate',
                     [WorkshopCertificateController::class, 'issue']

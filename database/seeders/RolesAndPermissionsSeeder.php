@@ -77,6 +77,34 @@ class RolesAndPermissionsSeeder extends Seeder
             'enrollment:update',
             'enrollment:cancel',
             /*
+|--------------------------------------------------------------------------
+| Attendance
+|--------------------------------------------------------------------------
+*/
+            'attendance:read',
+            'attendance:create',
+            'attendance:update',
+            'attendance:delete',
+
+            'attendance:mark',
+
+            'attendance:read:any',
+            'attendance:read:own',
+
+            'attendance:update:any',
+            'attendance:update:own',
+            /*
+|--------------------------------------------------------------------------
+| Certificates
+|--------------------------------------------------------------------------
+*/
+            'certificate:read',
+            'certificate:create',
+            'certificate:download',
+
+            'certificate:read:any',
+            'certificate:read:own',
+            /*
             |--------------------------------------------------------------------------
             | Reviews
             |--------------------------------------------------------------------------
@@ -155,6 +183,21 @@ class RolesAndPermissionsSeeder extends Seeder
             'enrollment:read',
             'enrollment:update',
 
+            'attendance:read',
+            'attendance:create',
+            'attendance:update',
+            'attendance:delete',
+            'attendance:mark',
+
+            'attendance:read:any',
+            'attendance:update:any',
+
+            'certificate:read',
+            'certificate:create',
+            'certificate:download',
+
+            'certificate:read:any',
+
             'review:read',
             'review:update',
         ]);
@@ -175,6 +218,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'enrollment:create',
             'enrollment:read',
             'enrollment:cancel',
+            'attendance:read:own',
+
+            'certificate:read:own',
+            'certificate:download',
 
             'review:create',
             'review:read',
