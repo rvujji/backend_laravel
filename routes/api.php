@@ -123,6 +123,13 @@ Route::prefix('v1')->group(function () {
                     WorkshopSessionController::class
                 );
                 Route::get(
+                    'offering-enrollments/filters',
+                    [
+                        AdminOfferingEnrollmentController::class,
+                        'filters',
+                    ]
+                );
+                Route::get(
                     'offering-enrollments',
                     [AdminOfferingEnrollmentController::class, 'index']
                 );

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8a1c3c2ed36838744dc4788800db34e6",
+    "content-hash": "057c4dc6df774f62c525538b02ceea4e",
     "packages": [
         {
             "name": "barryvdh/laravel-dompdf",
@@ -214,16 +214,16 @@
         },
         {
             "name": "dedoc/scramble",
-            "version": "v0.13.23",
+            "version": "v0.13.24",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dedoc/scramble.git",
-                "reference": "1eea402b65b26e1d9a0558da23edd4dbf2183122"
+                "reference": "a5a82b30c59e0b2734cdb024af3a8c32f8b1bb6c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dedoc/scramble/zipball/1eea402b65b26e1d9a0558da23edd4dbf2183122",
-                "reference": "1eea402b65b26e1d9a0558da23edd4dbf2183122",
+                "url": "https://api.github.com/repos/dedoc/scramble/zipball/a5a82b30c59e0b2734cdb024af3a8c32f8b1bb6c",
+                "reference": "a5a82b30c59e0b2734cdb024af3a8c32f8b1bb6c",
                 "shasum": ""
             },
             "require": {
@@ -282,7 +282,7 @@
             ],
             "support": {
                 "issues": "https://github.com/dedoc/scramble/issues",
-                "source": "https://github.com/dedoc/scramble/tree/v0.13.23"
+                "source": "https://github.com/dedoc/scramble/tree/v0.13.24"
             },
             "funding": [
                 {
@@ -290,7 +290,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-05-19T13:51:35+00:00"
+            "time": "2026-05-29T18:39:09+00:00"
         },
         {
             "name": "dflydev/dot-access-data",

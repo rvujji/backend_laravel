@@ -24,6 +24,19 @@ extends JsonResource
                 $this->whenLoaded('offering')
             ),
 
+            'workshop' =>
+
+            $this->offering?->workshop
+                ? [
+
+                    'id' =>
+                    $this->offering->workshop->id,
+
+                    'title' =>
+                    $this->offering->workshop->title,
+                ]
+                : null,
+
             'student' => $this->whenLoaded('student'),
 
             /*
@@ -83,6 +96,15 @@ extends JsonResource
 
             'is_completed' =>
             $this->completion_status === 'completed',
+
+            'attendance_percentage' =>
+            $this->attendance_percentage,
+
+            'total_sessions' =>
+            $this->total_sessions,
+
+            'attended_sessions' =>
+            $this->attended_sessions,
 
             'certificate_eligible' =>
             $this->completion_status === 'completed',

@@ -31,4 +31,37 @@ class ApiResponse
             'errors' => $errors
         ], $status);
     }
+
+    public static function paginated(
+        string $message,
+        $paginator,
+        $resourceClass
+    ) {
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+
+            'data' => [
+
+                'current_page' =>
+                $paginator->currentPage(),
+
+                'last_page' =>
+                $paginator->lastPage(),
+
+                'per_page' =>
+                $paginator->perPage(),
+
+                'total' =>
+                $paginator->total(),
+
+                'data' =>
+                $resourceClass::collection(
+                    $paginator->items()
+                ),
+            ],
+
+            'errors' => null,
+        ]);
+    }
 }
