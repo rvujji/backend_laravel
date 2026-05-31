@@ -23,90 +23,105 @@ class WorkshopCertificateService
         WorkshopOfferingEnrollment $enrollment
     ): WorkshopCertificate {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Validate Completion
-        |--------------------------------------------------------------------------
-        */
+        try {
 
-        if (
-            $enrollment->completion_status !==
-            'completed'
-        ) {
-
-            throw new Exception(
-                'Enrollment is not completed.'
+            logger()->info(
+                'Certificate issuance started',
+                [
+                    'enrollment_id' => $enrollment->id,
+                    'completion_status' => $enrollment->completion_status,
+                    'certificate_eligible' => $enrollment->certificate_eligible ?? null,
+                    'certificate_issued' => $enrollment->certificate_issued ?? null,
+                ]
             );
-        }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Already Issued
-        |--------------------------------------------------------------------------
-        */
+            if (
+                $enrollment->completion_status !==
+                'completed'
+            ) {
 
-        if ($enrollment->certificate) {
+                throw new Exception(
+                    'Enrollment is not completed.'
+                );
+            }
 
-            return $enrollment->certificate;
-        }
+            if ($enrollment->certificate) {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Create Certificate
-        |--------------------------------------------------------------------------
-        */
+                logger()->info(
+                    'Certificate already exists',
+                    [
+                        'enrollment_id' => $enrollment->id,
+                        'certificate_id' => $enrollment->certificate->id,
+                    ]
+                );
 
-        $certificate =
-            WorkshopCertificate::create([
+                return $enrollment->certificate;
+            }
 
-                'workshop_offering_enrollment_id'
-                => $enrollment->id,
+            $certificate =
+                WorkshopCertificate::create([
 
-                'certificate_number' =>
-                $this->generateCertificateNumber(),
+                    'workshop_offering_enrollment_id'
+                    => $enrollment->id,
 
-                'verification_code' =>
-                Str::uuid(),
+                    'certificate_number' =>
+                    $this->generateCertificateNumber(),
 
-                'issued_at' =>
-                now(),
+                    'verification_code' =>
+                    Str::uuid(),
 
-                'status' =>
-                'issued',
+                    'issued_at' =>
+                    now(),
+
+                    'status' =>
+                    'issued',
+                ]);
+
+            logger()->info(
+                'Certificate record created',
+                [
+                    'certificate_id' => $certificate->id,
+                    'certificate_number' => $certificate->certificate_number,
+                ]
+            );
+
+            $pdfPath = $this->generatePdf(
+                $certificate,
+                $enrollment
+            );
+
+            $certificate->update([
+                'pdf_path' => $pdfPath,
             ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Generate PDF
-        |--------------------------------------------------------------------------
-        */
+            $enrollment->update([
+                'certificate_issued' => true,
+            ]);
 
-        $pdfPath = $this->generatePdf(
-            $certificate,
-            $enrollment
-        );
+            logger()->info(
+                'Certificate issuance completed',
+                [
+                    'certificate_id' => $certificate->id,
+                    'pdf_path' => $pdfPath,
+                ]
+            );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Update Certificate
-        |--------------------------------------------------------------------------
-        */
+            return $certificate->fresh();
+        } catch (\Throwable $e) {
 
-        $certificate->update([
-            'pdf_path' => $pdfPath,
-        ]);
+            logger()->error(
+                'Certificate issuance failed',
+                [
+                    'enrollment_id' => $enrollment->id ?? null,
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                ]
+            );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Update Enrollment
-        |--------------------------------------------------------------------------
-        */
-
-        $enrollment->update([
-            'certificate_issued' => true,
-        ]);
-
-        return $certificate->fresh();
+            throw $e;
+        }
     }
 
     /*
@@ -120,58 +135,84 @@ class WorkshopCertificateService
         WorkshopOfferingEnrollment $enrollment
     ): string {
 
-        $student =
-            $enrollment->student;
+        try {
 
-        $offering =
-            $enrollment->offering;
+            $student = $enrollment->student;
+            $offering = $enrollment->offering;
+            $workshop = $offering->workshop;
 
-        $workshop =
-            $offering->workshop;
+            $logoPath =
+                public_path(
+                    'storage/images/logo.png'
+                );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Load PDF View
-        |--------------------------------------------------------------------------
-        */
+            logger()->info(
+                'Generating certificate PDF',
+                [
+                    'certificate_id' => $certificate->id,
+                    'view' => 'pdfs.workshop-certificate',
+                ]
+            );
 
-        $pdf = Pdf::loadView(
-            'pdfs.workshop-certificate',
-            [
-                'certificate' => $certificate,
-                'student' => $student,
-                'offering' => $offering,
-                'workshop' => $workshop,
-            ]
-        );
+            $pdf = Pdf::loadView(
 
-        /*
-        |--------------------------------------------------------------------------
-        | File Path
-        |--------------------------------------------------------------------------
-        */
+                'pdfs.workshop-certificate',
 
-        $fileName =
-            'certificate-' .
-            $certificate->certificate_number .
-            '.pdf';
+                [
+                    'certificate' => $certificate,
 
-        $path =
-            'certificates/' .
-            $fileName;
+                    'student' =>
+                    $enrollment->student,
 
-        /*
-        |--------------------------------------------------------------------------
-        | Save PDF
-        |--------------------------------------------------------------------------
-        */
+                    'offering' =>
+                    $enrollment->offering,
 
-        Storage::disk('public')->put(
-            $path,
-            $pdf->output()
-        );
+                    'workshop' =>
+                    $enrollment
+                        ->offering
+                        ->workshop,
 
-        return $path;
+                    'logoPath' => $logoPath,
+                ]
+            );
+
+            $fileName =
+                'certificate-' .
+                $certificate->certificate_number .
+                '.pdf';
+
+            $path =
+                'certificates/' .
+                $fileName;
+
+            Storage::disk('public')->put(
+                $path,
+                $pdf->output()
+            );
+
+            logger()->info(
+                'Certificate PDF saved',
+                [
+                    'path' => $path,
+                ]
+            );
+
+            return $path;
+        } catch (\Throwable $e) {
+
+            logger()->error(
+                'Certificate PDF generation failed',
+                [
+                    'certificate_id' => $certificate->id ?? null,
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                ]
+            );
+
+            throw $e;
+        }
     }
 
     /*

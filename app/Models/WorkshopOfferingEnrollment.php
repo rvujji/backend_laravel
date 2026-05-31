@@ -27,6 +27,14 @@ class WorkshopOfferingEnrollment extends Model
 
         'progress_percentage',
 
+        'attendance_percentage',
+
+        'total_sessions',
+
+        'attended_sessions',
+
+        'certificate_eligible',
+
         'certificate_issued',
 
         'enrolled_at',
@@ -41,6 +49,10 @@ class WorkshopOfferingEnrollment extends Model
         'amount_paid' => 'decimal:2',
 
         'progress_percentage' => 'decimal:2',
+
+        'attendance_percentage' => 'decimal:2',
+
+        'certificate_eligible' => 'boolean',
 
         'certificate_issued' => 'boolean',
 
@@ -71,7 +83,7 @@ class WorkshopOfferingEnrollment extends Model
         );
     }
 
-    
+
 
     public function reservations()
     {

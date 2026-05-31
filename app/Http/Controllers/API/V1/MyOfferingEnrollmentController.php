@@ -33,6 +33,7 @@ extends Controller
             WorkshopOfferingEnrollment::with([
                 'offering',
                 'offering.workshop',
+                'certificate',
             ])
             ->where('student_id', auth()->id())
             ->where(

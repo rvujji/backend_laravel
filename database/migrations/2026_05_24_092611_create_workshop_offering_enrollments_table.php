@@ -58,6 +58,11 @@ return new class extends Migration
                 $table->string('completion_status')
                     ->default('not_started');
 
+                $table->boolean(
+                    'certificate_eligible'
+                )
+                    ->default(false);
+
                 $table->decimal('progress_percentage', 5, 2)
                     ->default(0);
 
@@ -72,6 +77,12 @@ return new class extends Migration
                     'attended_sessions'
                 )->default(0);
 
+                $table->decimal(
+                    'attendance_percentage',
+                    5,
+                    2
+                )
+                    ->default(0);
                 /*
                 |--------------------------------------------------------------------------
                 | Audit

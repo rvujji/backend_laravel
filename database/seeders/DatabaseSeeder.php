@@ -26,7 +26,7 @@ class DatabaseSeeder extends Seeder
             WorkshopOfferingEnrollmentSeeder::class,
             WorkshopSessionReservationSeeder::class,
             WorkshopAttendanceSeeder::class,
-            WorkshopCertificateSeeder::class,
+            // WorkshopCertificateSeeder::class,
         ]);
     }
 }

@@ -33,6 +33,46 @@ class WorkshopSessionResource extends JsonResource
                 'assistantTrainer'
             ),
 
+            'offering' => $this->whenLoaded(
+                'offering',
+                function () {
+
+                    return [
+
+                        'id' =>
+                        $this->offering->id,
+
+                        'title' =>
+                        $this->offering->title,
+                    ];
+                }
+            ),
+
+            'workshop' =>
+
+            $this->when(
+
+                $this->relationLoaded('offering')
+                    && $this->offering?->relationLoaded('workshop'),
+
+                function () {
+
+                    return [
+
+                        'id' =>
+                        $this->offering->workshop->id,
+
+                        'title' =>
+                        $this->offering->workshop->title,
+                    ];
+                }
+            ),
+
+            'reservation_count' =>
+            $this->whenCounted(
+                'reservations'
+            ),
+
             /*
             |--------------------------------------------------------------------------
             | Timing

@@ -87,6 +87,29 @@ extends JsonResource
             'certificate_eligible' =>
             $this->completion_status === 'completed',
 
+            'certificate' =>
+            $this->certificate
+                ? [
+                    'id' => $this->certificate->id,
+
+                    'certificate_number' =>
+                    $this->certificate->certificate_number,
+
+                    'issued_at' =>
+                    $this->certificate->issued_at,
+
+                    'certificate_url' =>
+                    $this->certificate->pdf_path
+                        ? url(
+                            'storage/' .
+                                $this->certificate->pdf_path
+                        )
+                        : null,
+
+                    'downloadable' =>
+                    !empty($this->certificate->pdf_path),
+                ]
+                : null,
             /*
             |--------------------------------------------------------------------------
             | Timestamps

@@ -16,80 +16,79 @@ class EnrollmentProgressService
         | Total Sessions
         |--------------------------------------------------------------------------
         */
-
+        // logger('RECALCULATE START');
         $totalSessions =
 
             $enrollment
-                ->offering
-                ->sessions()
+            ->offering
+            ->sessions()
 
-                ->where(
-                    'status',
-                    '!=',
-                    'cancelled'
-                )
+            ->where(
+                'status',
+                '!=',
+                'cancelled'
+            )
 
-                ->count();
+            ->count();
 
         /*
         |--------------------------------------------------------------------------
         | Attended Sessions
         |--------------------------------------------------------------------------
         */
-
+        // logger('STEP 1');
         $attendedSessions =
 
             WorkshopAttendance::query()
 
-                ->whereHas(
+            ->whereIn(
+                'status',
+                [
+                    'present',
+                    'late',
+                    'partial',
+                ]
+            )
 
-                    'reservation',
+            ->whereHas(
 
-                    function ($q) use ($enrollment) {
+                'reservation',
 
-                        $q->where(
-                            'workshop_offering_enrollment_id',
-                            $enrollment->id
-                        );
-                    }
-                )
+                function ($q) use ($enrollment) {
 
-                ->whereIn(
-                    'status',
-                    [
-                        'present',
-                        'late',
-                        'partial',
-                    ]
-                )
-
-                ->count();
+                    $q->where(
+                        'workshop_offering_enrollment_id',
+                        $enrollment->id
+                    );
+                }
+            )
+            ->count();
 
         /*
         |--------------------------------------------------------------------------
         | Attendance Percentage
         |--------------------------------------------------------------------------
         */
-
+        // logger('STEP 2');
         $attendancePercentage =
             $totalSessions > 0
 
-                ? round(
-                    (
-                        $attendedSessions
-                        / $totalSessions
-                    ) * 100,
-                    2
-                )
+            ? round(
+                (
+                    $attendedSessions
+                    / $totalSessions
+                ) * 100,
+                2
+            )
 
-                : 0;
+            : 0;
 
         /*
         |--------------------------------------------------------------------------
         | Completion Logic
         |--------------------------------------------------------------------------
         */
-
+        // logger('STEP 3');
         $completed =
             $attendedSessions >= $totalSessions
             && $totalSessions > 0;
@@ -103,27 +102,36 @@ class EnrollmentProgressService
         $enrollment->update([
 
             'total_sessions' =>
-                $totalSessions,
+            $totalSessions,
 
             'attended_sessions' =>
-                $attendedSessions,
+            $attendedSessions,
 
             'attendance_percentage' =>
-                $attendancePercentage,
+            $attendancePercentage,
 
             'progress_percentage' =>
-                $attendancePercentage,
+            $attendancePercentage,
 
             'completion_status' =>
 
-                $completed
-                    ? 'completed'
-                    : 'in_progress',
+            $completed
+                ? 'completed'
+                : 'in_progress',
 
             'certificate_eligible' =>
-                $completed,
+            $completed,
         ]);
 
+        // logger([
+        //     'enrollment_id' => $enrollment->id,
+        //     'total_sessions' => $totalSessions,
+        //     'attended_sessions' => $attendedSessions,
+        //     'progress_percentage' => $attendancePercentage,
+        //     'completed' => $completed,
+        // ]);
+
+        // logger('RECALCULATE END');
         return $enrollment->fresh();
     }
 }

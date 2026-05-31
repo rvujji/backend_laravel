@@ -11,6 +11,8 @@ use App\Helpers\ApiResponse;
 
 use App\Http\Controllers\Controller;
 
+use Illuminate\Support\Facades\Log;
+
 use App\Models\WorkshopCertificate;
 use App\Models\WorkshopOfferingEnrollment;
 
@@ -63,7 +65,11 @@ extends Controller
                 ),
             );
         } catch (Exception $e) {
-
+            Log::error('Error issuing certificate', [
+                'message' => $e->getMessage(),
+                'enrollment_id' => $enrollment->id,
+                'exception' => $e,
+            ]);
             return ApiResponse::error(
                 $e->getMessage(),
                 422

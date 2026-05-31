@@ -69,6 +69,24 @@ class RolesAndPermissionsSeeder extends Seeder
             'workshop:delete:own',
             /*
             |--------------------------------------------------------------------------
+            | Offerings
+            |--------------------------------------------------------------------------
+            */
+            'offering:read',
+            'offering:create',
+            'offering:update',
+            'offering:delete',
+            /*
+            |--------------------------------------------------------------------------
+            | Sessions
+            |--------------------------------------------------------------------------
+            */
+            'session:read',
+            'session:create',
+            'session:update',
+            'session:delete',
+            /*
+            |--------------------------------------------------------------------------
             | Enrollment
             |--------------------------------------------------------------------------
             */
@@ -77,10 +95,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'enrollment:update',
             'enrollment:cancel',
             /*
-|--------------------------------------------------------------------------
-| Attendance
-|--------------------------------------------------------------------------
-*/
+            |--------------------------------------------------------------------------
+            | Attendance
+            |--------------------------------------------------------------------------
+            */
             'attendance:read',
             'attendance:create',
             'attendance:update',
@@ -94,10 +112,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'attendance:update:any',
             'attendance:update:own',
             /*
-|--------------------------------------------------------------------------
-| Certificates
-|--------------------------------------------------------------------------
-*/
+            |--------------------------------------------------------------------------
+            | Certificates
+            |--------------------------------------------------------------------------
+            */
             'certificate:read',
             'certificate:create',
             'certificate:download',
@@ -180,6 +198,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'workshop:update:own',
             'workshop:delete:own',
 
+            'offering:read',
+
+            'session:read',
+            'session:create',
+            'session:update',
+
             'enrollment:read',
             'enrollment:update',
 
@@ -215,6 +239,10 @@ class RolesAndPermissionsSeeder extends Seeder
 
             'workshop:read',
 
+            'offering:read',
+
+            'session:read',
+
             'enrollment:create',
             'enrollment:read',
             'enrollment:cancel',
@@ -240,6 +268,10 @@ class RolesAndPermissionsSeeder extends Seeder
 
             'workshop:read',
 
+            'offering:read',
+
+            'session:read',
+
             'enrollment:read',
 
             'review:read',
@@ -257,8 +289,13 @@ class RolesAndPermissionsSeeder extends Seeder
             'profile:update',
 
             'user:read',
+
             'workshop:read',
             'workshop:update',
+
+            'offering:read',
+
+            'session:read',
 
             'enrollment:read',
 

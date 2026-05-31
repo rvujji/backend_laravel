@@ -13,6 +13,7 @@ use App\Http\Requests\StoreWorkshopSessionRequest;
 use App\Http\Requests\UpdateWorkshopSessionRequest;
 
 use App\Http\Resources\WorkshopSessionResource;
+use Illuminate\Http\Request;
 
 class WorkshopSessionController extends Controller
 {
@@ -20,15 +21,95 @@ class WorkshopSessionController extends Controller
         protected WorkshopSessionService $service
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
-        $sessions = WorkshopSession::with([
-            'offering',
-            'trainer',
-            'assistantTrainer',
-        ])
+        $query = WorkshopSession::query()
+
+            ->with([
+                'offering',
+                'offering.workshop',
+                'trainer',
+                'assistantTrainer',
+            ])
+            ->withCount([
+                'reservations',
+            ]);
+
+        /*
+    |--------------------------------------------------------------------------
+    | Search
+    |--------------------------------------------------------------------------
+    */
+
+        if ($request->filled('search')) {
+
+            $query->where(
+                'title',
+                'like',
+                '%' . $request->search . '%'
+            );
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Workshop Filter
+    |--------------------------------------------------------------------------
+    */
+
+        if ($request->filled('workshop_id')) {
+
+            $query->whereHas(
+                'offering',
+                function ($q) use ($request) {
+
+                    $q->where(
+                        'workshop_id',
+                        $request->workshop_id
+                    );
+                }
+            );
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Offering Filter
+    |--------------------------------------------------------------------------
+    */
+
+        if ($request->filled('workshop_offering_id')) {
+
+            $query->where(
+                'workshop_offering_id',
+                $request->workshop_offering_id
+            );
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Status Filter
+    |--------------------------------------------------------------------------
+    */
+
+        if ($request->filled('status')) {
+
+            $query->where(
+                'status',
+                $request->status
+            );
+        }
+
+        $sessions =
+
+            $query
+
             ->latest('start_at')
-            ->paginate();
+
+            ->paginate(
+                $request->integer(
+                    'per_page',
+                    15
+                )
+            );
 
         return ApiResponse::success(
 
