@@ -22,7 +22,13 @@ class WorkshopOfferingService
 
         $offering->update($data);
 
-        return $offering->fresh();
+
+        $fresh = WorkshopOffering::find(
+            $offering->id
+        );
+
+
+        return $fresh ?? $offering;
     }
 
     public function delete(

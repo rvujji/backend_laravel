@@ -133,10 +133,10 @@ class WorkshopSessionController extends Controller
     }
 
     public function show(
-        WorkshopSession $workshopSession
+        WorkshopSession $session
     ) {
 
-        $workshopSession->load([
+        $session->load([
             'offering',
             'trainer',
             'assistantTrainer',
@@ -144,17 +144,17 @@ class WorkshopSessionController extends Controller
 
         return ApiResponse::success(
             'Workshop session fetched successfully.',
-            new WorkshopSessionResource($workshopSession),
+            new WorkshopSessionResource($session),
         );
     }
 
     public function update(
         UpdateWorkshopSessionRequest $request,
-        WorkshopSession $workshopSession
+        WorkshopSession $session
     ) {
 
         $session = $this->service->update(
-            $workshopSession,
+            $session,
             $request->validated()
         );
 
@@ -165,10 +165,10 @@ class WorkshopSessionController extends Controller
     }
 
     public function destroy(
-        WorkshopSession $workshopSession
+        WorkshopSession $session
     ) {
 
-        $session = $this->service->delete($workshopSession);
+        $session = $this->service->delete($session);
 
         return ApiResponse::success(
             'Workshop session deleted successfully.',

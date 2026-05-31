@@ -52,10 +52,10 @@ class WorkshopOfferingController extends Controller
     }
 
     public function show(
-        WorkshopOffering $workshopOffering
+        WorkshopOffering $offering
     ) {
 
-        $workshopOffering->load([
+        $offering->load([
             'workshop',
             'owner',
             'sessions',
@@ -63,17 +63,17 @@ class WorkshopOfferingController extends Controller
 
         return ApiResponse::success(
             'Workshop offering fetched successfully.',
-            new WorkshopOfferingResource($workshopOffering),
+            new WorkshopOfferingResource($offering),
         );
     }
 
     public function update(
         UpdateWorkshopOfferingRequest $request,
-        WorkshopOffering $workshopOffering
+        WorkshopOffering $offering
     ) {
 
         $offering = $this->service->update(
-            $workshopOffering,
+            $offering,
             $request->validated()
         );
 
@@ -84,10 +84,10 @@ class WorkshopOfferingController extends Controller
     }
 
     public function destroy(
-        WorkshopOffering $workshopOffering
+        WorkshopOffering $offering
     ) {
 
-        $offering = $this->service->delete($workshopOffering);
+        $offering = $this->service->delete($offering);
 
         return ApiResponse::success(
             'Workshop offering deleted successfully.',
