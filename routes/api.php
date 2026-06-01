@@ -18,6 +18,54 @@ use App\Http\Controllers\API\V1\WorkshopAttendanceController;
 use App\Http\Controllers\API\V1\MyAttendanceController;
 use App\Http\Controllers\API\V1\WorkshopCertificateController;
 
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
+
+Route::get(
+    '/auth/email/verify/{id}/{hash}',
+    function (
+        Request $request,
+        $id,
+        $hash
+    ) {
+
+        if (! URL::hasValidSignature($request)) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid verification link.',
+            ], 403);
+        }
+
+        $user = User::findOrFail($id);
+
+        if (
+            ! hash_equals(
+                sha1($user->email),
+                $hash
+            )
+        ) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid verification hash.',
+            ], 403);
+        }
+
+        if (! $user->hasVerifiedEmail()) {
+
+            $user->markEmailAsVerified();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Email verified successfully.',
+        ]);
+    }
+)
+    ->name('verification.verify');
+
 Route::prefix('v1')->group(function () {
 
     /*
@@ -29,6 +77,15 @@ Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
         Route::post('/register', [AuthController::class,            'register']);
         Route::post('/login', [AuthController::class,            'login']);
+        Route::post(
+            '/forgot-password',
+            [AuthController::class, 'forgotPassword']
+        );
+
+        Route::post(
+            '/reset-password',
+            [AuthController::class, 'resetPassword']
+        );
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/logout', [AuthController::class,                'logout']);
 
@@ -36,6 +93,18 @@ Route::prefix('v1')->group(function () {
                 AuthController::class,
                 'me'
             ]);
+            Route::get('/email/status', [
+                AuthController::class,
+                'emailVerificationStatus'
+            ]);
+            Route::post(
+                '/email/resend',
+                [AuthController::class, 'resendVerificationEmail']
+            );
+            Route::post(
+                '/change-password',
+                [AuthController::class, 'changePassword']
+            );
         });
     });
 
@@ -56,6 +125,7 @@ Route::prefix('v1')->group(function () {
             '/featured-workshops',
             [PublicWorkshopController::class, 'featuredWorkshops']
         );
+
         /*
         |--------------------------------------------------------------------------
         | Offerings

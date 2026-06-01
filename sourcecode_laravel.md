@@ -309,6 +309,39 @@ class ApiResponse
             'errors' => $errors
         ], $status);
     }
+
+    public static function paginated(
+        string $message,
+        $paginator,
+        $resourceClass
+    ) {
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+
+            'data' => [
+
+                'current_page' =>
+                $paginator->currentPage(),
+
+                'last_page' =>
+                $paginator->lastPage(),
+
+                'per_page' =>
+                $paginator->perPage(),
+
+                'total' =>
+                $paginator->total(),
+
+                'data' =>
+                $resourceClass::collection(
+                    $paginator->items()
+                ),
+            ],
+
+            'errors' => null,
+        ]);
+    }
 }
 
 \`\`\`
@@ -341,6 +374,9 @@ namespace App\Http\Controllers\API\V1;
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
 
+use App\Models\User;
+use App\Models\Workshop;
+use App\Models\WorkshopOffering;
 use App\Models\WorkshopOfferingEnrollment;
 
 use App\Http\Resources\WorkshopOfferingEnrollmentResource;
@@ -357,6 +393,7 @@ extends Controller
                 'student',
                 'offering',
                 'offering.workshop',
+                'certificate',
             ]);
 
         /*
@@ -417,6 +454,36 @@ extends Controller
             );
         }
 
+        if ($request->filled('workshop_id')) {
+
+            $query->whereHas(
+                'offering',
+                function ($q) use ($request) {
+
+                    $q->where(
+                        'workshop_id',
+                        $request->workshop_id
+                    );
+                }
+            );
+        }
+
+        if ($request->filled('student_id')) {
+
+            $query->where(
+                'student_id',
+                $request->student_id
+            );
+        }
+
+        if ($request->filled('completion_status')) {
+
+            $query->where(
+                'completion_status',
+                $request->completion_status
+            );
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Pagination
@@ -432,11 +499,68 @@ extends Controller
                 )
             );
 
-        return ApiResponse::success(
+        return ApiResponse::paginated(
             'Offering enrollments fetched successfully.',
-            WorkshopOfferingEnrollmentResource::collection(
-                $enrollments
-            ),
+            $enrollments,
+            WorkshopOfferingEnrollmentResource::class
+        );
+    }
+
+    public function filters()
+    {
+        return ApiResponse::success(
+
+            'Enrollment filters fetched successfully.',
+
+            [
+
+                'workshops' =>
+
+                Workshop::query()
+
+                    ->select(
+                        'id',
+                        'title'
+                    )
+
+                    ->orderBy('title')
+
+                    ->get(),
+
+                'offerings' =>
+
+                WorkshopOffering::query()
+
+                    ->select(
+                        'id',
+                        'workshop_id',
+                        'title'
+                    )
+
+                    ->orderBy('title')
+
+                    ->get(),
+
+                'students' =>
+
+                User::query()
+
+                    ->select(
+                        'id',
+                        'name'
+                    )
+
+                    ->orderBy('name')
+
+                    ->get(),
+
+                'completion_statuses' => [
+
+                    'not_started',
+                    'in_progress',
+                    'completed',
+                ],
+            ]
         );
     }
 }
@@ -681,6 +805,24 @@ class AuthController extends Controller
             ]
         );
     }
+
+    public function emailVerificationStatus()
+    {
+        $user = auth()->user();
+
+        return ApiResponse::success(
+
+            'Email verification status fetched.',
+
+            [
+                'verified' =>
+                $user->hasVerifiedEmail(),
+
+                'email_verified_at' =>
+                $user->email_verified_at,
+            ]
+        );
+    }
 }
 
 \`\`\`
@@ -841,6 +983,7 @@ extends Controller
             WorkshopOfferingEnrollment::with([
                 'offering',
                 'offering.workshop',
+                'certificate',
             ])
             ->where('student_id', auth()->id())
             ->where(
@@ -1854,6 +1997,8 @@ use App\Helpers\ApiResponse;
 
 use App\Http\Controllers\Controller;
 
+use Illuminate\Support\Facades\Log;
+
 use App\Models\WorkshopCertificate;
 use App\Models\WorkshopOfferingEnrollment;
 
@@ -1906,7 +2051,11 @@ extends Controller
                 ),
             );
         } catch (Exception $e) {
-
+            Log::error('Error issuing certificate', [
+                'message' => $e->getMessage(),
+                'enrollment_id' => $enrollment->id,
+                'exception' => $e,
+            ]);
             return ApiResponse::error(
                 $e->getMessage(),
                 422
@@ -2186,10 +2335,10 @@ class WorkshopOfferingController extends Controller
     }
 
     public function show(
-        WorkshopOffering $workshopOffering
+        WorkshopOffering $offering
     ) {
 
-        $workshopOffering->load([
+        $offering->load([
             'workshop',
             'owner',
             'sessions',
@@ -2197,17 +2346,17 @@ class WorkshopOfferingController extends Controller
 
         return ApiResponse::success(
             'Workshop offering fetched successfully.',
-            new WorkshopOfferingResource($workshopOffering),
+            new WorkshopOfferingResource($offering),
         );
     }
 
     public function update(
         UpdateWorkshopOfferingRequest $request,
-        WorkshopOffering $workshopOffering
+        WorkshopOffering $offering
     ) {
 
         $offering = $this->service->update(
-            $workshopOffering,
+            $offering,
             $request->validated()
         );
 
@@ -2218,10 +2367,10 @@ class WorkshopOfferingController extends Controller
     }
 
     public function destroy(
-        WorkshopOffering $workshopOffering
+        WorkshopOffering $offering
     ) {
 
-        $offering = $this->service->delete($workshopOffering);
+        $offering = $this->service->delete($offering);
 
         return ApiResponse::success(
             'Workshop offering deleted successfully.',
@@ -2250,6 +2399,7 @@ use App\Http\Requests\StoreWorkshopSessionRequest;
 use App\Http\Requests\UpdateWorkshopSessionRequest;
 
 use App\Http\Resources\WorkshopSessionResource;
+use Illuminate\Http\Request;
 
 class WorkshopSessionController extends Controller
 {
@@ -2257,15 +2407,95 @@ class WorkshopSessionController extends Controller
         protected WorkshopSessionService $service
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
-        $sessions = WorkshopSession::with([
-            'offering',
-            'trainer',
-            'assistantTrainer',
-        ])
+        $query = WorkshopSession::query()
+
+            ->with([
+                'offering',
+                'offering.workshop',
+                'trainer',
+                'assistantTrainer',
+            ])
+            ->withCount([
+                'reservations',
+            ]);
+
+        /*
+    |--------------------------------------------------------------------------
+    | Search
+    |--------------------------------------------------------------------------
+    */
+
+        if ($request->filled('search')) {
+
+            $query->where(
+                'title',
+                'like',
+                '%' . $request->search . '%'
+            );
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Workshop Filter
+    |--------------------------------------------------------------------------
+    */
+
+        if ($request->filled('workshop_id')) {
+
+            $query->whereHas(
+                'offering',
+                function ($q) use ($request) {
+
+                    $q->where(
+                        'workshop_id',
+                        $request->workshop_id
+                    );
+                }
+            );
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Offering Filter
+    |--------------------------------------------------------------------------
+    */
+
+        if ($request->filled('workshop_offering_id')) {
+
+            $query->where(
+                'workshop_offering_id',
+                $request->workshop_offering_id
+            );
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Status Filter
+    |--------------------------------------------------------------------------
+    */
+
+        if ($request->filled('status')) {
+
+            $query->where(
+                'status',
+                $request->status
+            );
+        }
+
+        $sessions =
+
+            $query
+
             ->latest('start_at')
-            ->paginate();
+
+            ->paginate(
+                $request->integer(
+                    'per_page',
+                    15
+                )
+            );
 
         return ApiResponse::success(
 
@@ -2289,10 +2519,10 @@ class WorkshopSessionController extends Controller
     }
 
     public function show(
-        WorkshopSession $workshopSession
+        WorkshopSession $session
     ) {
 
-        $workshopSession->load([
+        $session->load([
             'offering',
             'trainer',
             'assistantTrainer',
@@ -2300,17 +2530,17 @@ class WorkshopSessionController extends Controller
 
         return ApiResponse::success(
             'Workshop session fetched successfully.',
-            new WorkshopSessionResource($workshopSession),
+            new WorkshopSessionResource($session),
         );
     }
 
     public function update(
         UpdateWorkshopSessionRequest $request,
-        WorkshopSession $workshopSession
+        WorkshopSession $session
     ) {
 
         $session = $this->service->update(
-            $workshopSession,
+            $session,
             $request->validated()
         );
 
@@ -2321,10 +2551,10 @@ class WorkshopSessionController extends Controller
     }
 
     public function destroy(
-        WorkshopSession $workshopSession
+        WorkshopSession $session
     ) {
 
-        $session = $this->service->delete($workshopSession);
+        $session = $this->service->delete($session);
 
         return ApiResponse::success(
             'Workshop session deleted successfully.',
@@ -3494,6 +3724,19 @@ extends JsonResource
                 $this->whenLoaded('offering')
             ),
 
+            'workshop' =>
+
+            $this->offering?->workshop
+                ? [
+
+                    'id' =>
+                    $this->offering->workshop->id,
+
+                    'title' =>
+                    $this->offering->workshop->title,
+                ]
+                : null,
+
             'student' => $this->whenLoaded('student'),
 
             /*
@@ -3554,9 +3797,41 @@ extends JsonResource
             'is_completed' =>
             $this->completion_status === 'completed',
 
+            'attendance_percentage' =>
+            $this->attendance_percentage,
+
+            'total_sessions' =>
+            $this->total_sessions,
+
+            'attended_sessions' =>
+            $this->attended_sessions,
+
             'certificate_eligible' =>
             $this->completion_status === 'completed',
 
+            'certificate' =>
+            $this->certificate
+                ? [
+                    'id' => $this->certificate->id,
+
+                    'certificate_number' =>
+                    $this->certificate->certificate_number,
+
+                    'issued_at' =>
+                    $this->certificate->issued_at,
+
+                    'certificate_url' =>
+                    $this->certificate->pdf_path
+                        ? url(
+                            'storage/' .
+                                $this->certificate->pdf_path
+                        )
+                        : null,
+
+                    'downloadable' =>
+                    !empty($this->certificate->pdf_path),
+                ]
+                : null,
             /*
             |--------------------------------------------------------------------------
             | Timestamps
@@ -3863,6 +4138,46 @@ class WorkshopSessionResource extends JsonResource
                 'assistantTrainer'
             ),
 
+            'offering' => $this->whenLoaded(
+                'offering',
+                function () {
+
+                    return [
+
+                        'id' =>
+                        $this->offering->id,
+
+                        'title' =>
+                        $this->offering->title,
+                    ];
+                }
+            ),
+
+            'workshop' =>
+
+            $this->when(
+
+                $this->relationLoaded('offering')
+                    && $this->offering?->relationLoaded('workshop'),
+
+                function () {
+
+                    return [
+
+                        'id' =>
+                        $this->offering->workshop->id,
+
+                        'title' =>
+                        $this->offering->workshop->title,
+                    ];
+                }
+            ),
+
+            'reservation_count' =>
+            $this->whenCounted(
+                'reservations'
+            ),
+
             /*
             |--------------------------------------------------------------------------
             | Timing
@@ -4074,7 +4389,7 @@ class WorkshopSessionResource extends JsonResource
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -4084,7 +4399,7 @@ use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, HasApiTokens, HasRoles, SoftDeletes;
@@ -4500,6 +4815,14 @@ class WorkshopOfferingEnrollment extends Model
 
         'progress_percentage',
 
+        'attendance_percentage',
+
+        'total_sessions',
+
+        'attended_sessions',
+
+        'certificate_eligible',
+
         'certificate_issued',
 
         'enrolled_at',
@@ -4514,6 +4837,10 @@ class WorkshopOfferingEnrollment extends Model
         'amount_paid' => 'decimal:2',
 
         'progress_percentage' => 'decimal:2',
+
+        'attendance_percentage' => 'decimal:2',
+
+        'certificate_eligible' => 'boolean',
 
         'certificate_issued' => 'boolean',
 
@@ -4544,7 +4871,7 @@ class WorkshopOfferingEnrollment extends Model
         );
     }
 
-    
+
 
     public function reservations()
     {
@@ -5265,7 +5592,7 @@ class EnrollmentProgressService
         | Total Sessions
         |--------------------------------------------------------------------------
         */
-        logger('RECALCULATE START');
+        // logger('RECALCULATE START');
         $totalSessions =
 
             $enrollment
@@ -5285,7 +5612,7 @@ class EnrollmentProgressService
         | Attended Sessions
         |--------------------------------------------------------------------------
         */
-        logger('STEP 1');
+        // logger('STEP 1');
         $attendedSessions =
 
             WorkshopAttendance::query()
@@ -5318,7 +5645,7 @@ class EnrollmentProgressService
         | Attendance Percentage
         |--------------------------------------------------------------------------
         */
-        logger('STEP 2');
+        // logger('STEP 2');
         $attendancePercentage =
             $totalSessions > 0
 
@@ -5337,7 +5664,7 @@ class EnrollmentProgressService
         | Completion Logic
         |--------------------------------------------------------------------------
         */
-        logger('STEP 3');
+        // logger('STEP 3');
         $completed =
             $attendedSessions >= $totalSessions
             && $totalSessions > 0;
@@ -5372,15 +5699,15 @@ class EnrollmentProgressService
             $completed,
         ]);
 
-        logger([
-            'enrollment_id' => $enrollment->id,
-            'total_sessions' => $totalSessions,
-            'attended_sessions' => $attendedSessions,
-            'progress_percentage' => $attendancePercentage,
-            'completed' => $completed,
-        ]);
+        // logger([
+        //     'enrollment_id' => $enrollment->id,
+        //     'total_sessions' => $totalSessions,
+        //     'attended_sessions' => $attendedSessions,
+        //     'progress_percentage' => $attendancePercentage,
+        //     'completed' => $completed,
+        // ]);
 
-        logger('RECALCULATE END');
+        // logger('RECALCULATE END');
         return $enrollment->fresh();
     }
 }
@@ -5839,90 +6166,105 @@ class WorkshopCertificateService
         WorkshopOfferingEnrollment $enrollment
     ): WorkshopCertificate {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Validate Completion
-        |--------------------------------------------------------------------------
-        */
+        try {
 
-        if (
-            $enrollment->completion_status !==
-            'completed'
-        ) {
-
-            throw new Exception(
-                'Enrollment is not completed.'
+            logger()->info(
+                'Certificate issuance started',
+                [
+                    'enrollment_id' => $enrollment->id,
+                    'completion_status' => $enrollment->completion_status,
+                    'certificate_eligible' => $enrollment->certificate_eligible ?? null,
+                    'certificate_issued' => $enrollment->certificate_issued ?? null,
+                ]
             );
-        }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Already Issued
-        |--------------------------------------------------------------------------
-        */
+            if (
+                $enrollment->completion_status !==
+                'completed'
+            ) {
 
-        if ($enrollment->certificate) {
+                throw new Exception(
+                    'Enrollment is not completed.'
+                );
+            }
 
-            return $enrollment->certificate;
-        }
+            if ($enrollment->certificate) {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Create Certificate
-        |--------------------------------------------------------------------------
-        */
+                logger()->info(
+                    'Certificate already exists',
+                    [
+                        'enrollment_id' => $enrollment->id,
+                        'certificate_id' => $enrollment->certificate->id,
+                    ]
+                );
 
-        $certificate =
-            WorkshopCertificate::create([
+                return $enrollment->certificate;
+            }
 
-                'workshop_offering_enrollment_id'
-                => $enrollment->id,
+            $certificate =
+                WorkshopCertificate::create([
 
-                'certificate_number' =>
-                $this->generateCertificateNumber(),
+                    'workshop_offering_enrollment_id'
+                    => $enrollment->id,
 
-                'verification_code' =>
-                Str::uuid(),
+                    'certificate_number' =>
+                    $this->generateCertificateNumber(),
 
-                'issued_at' =>
-                now(),
+                    'verification_code' =>
+                    Str::uuid(),
 
-                'status' =>
-                'issued',
+                    'issued_at' =>
+                    now(),
+
+                    'status' =>
+                    'issued',
+                ]);
+
+            logger()->info(
+                'Certificate record created',
+                [
+                    'certificate_id' => $certificate->id,
+                    'certificate_number' => $certificate->certificate_number,
+                ]
+            );
+
+            $pdfPath = $this->generatePdf(
+                $certificate,
+                $enrollment
+            );
+
+            $certificate->update([
+                'pdf_path' => $pdfPath,
             ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Generate PDF
-        |--------------------------------------------------------------------------
-        */
+            $enrollment->update([
+                'certificate_issued' => true,
+            ]);
 
-        $pdfPath = $this->generatePdf(
-            $certificate,
-            $enrollment
-        );
+            logger()->info(
+                'Certificate issuance completed',
+                [
+                    'certificate_id' => $certificate->id,
+                    'pdf_path' => $pdfPath,
+                ]
+            );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Update Certificate
-        |--------------------------------------------------------------------------
-        */
+            return $certificate->fresh();
+        } catch (\Throwable $e) {
 
-        $certificate->update([
-            'pdf_path' => $pdfPath,
-        ]);
+            logger()->error(
+                'Certificate issuance failed',
+                [
+                    'enrollment_id' => $enrollment->id ?? null,
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                ]
+            );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Update Enrollment
-        |--------------------------------------------------------------------------
-        */
-
-        $enrollment->update([
-            'certificate_issued' => true,
-        ]);
-
-        return $certificate->fresh();
+            throw $e;
+        }
     }
 
     /*
@@ -5936,58 +6278,84 @@ class WorkshopCertificateService
         WorkshopOfferingEnrollment $enrollment
     ): string {
 
-        $student =
-            $enrollment->student;
+        try {
 
-        $offering =
-            $enrollment->offering;
+            $student = $enrollment->student;
+            $offering = $enrollment->offering;
+            $workshop = $offering->workshop;
 
-        $workshop =
-            $offering->workshop;
+            $logoPath =
+                public_path(
+                    'storage/images/logo.png'
+                );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Load PDF View
-        |--------------------------------------------------------------------------
-        */
+            logger()->info(
+                'Generating certificate PDF',
+                [
+                    'certificate_id' => $certificate->id,
+                    'view' => 'pdfs.workshop-certificate',
+                ]
+            );
 
-        $pdf = Pdf::loadView(
-            'pdfs.workshop-certificate',
-            [
-                'certificate' => $certificate,
-                'student' => $student,
-                'offering' => $offering,
-                'workshop' => $workshop,
-            ]
-        );
+            $pdf = Pdf::loadView(
 
-        /*
-        |--------------------------------------------------------------------------
-        | File Path
-        |--------------------------------------------------------------------------
-        */
+                'pdfs.workshop-certificate',
 
-        $fileName =
-            'certificate-' .
-            $certificate->certificate_number .
-            '.pdf';
+                [
+                    'certificate' => $certificate,
 
-        $path =
-            'certificates/' .
-            $fileName;
+                    'student' =>
+                    $enrollment->student,
 
-        /*
-        |--------------------------------------------------------------------------
-        | Save PDF
-        |--------------------------------------------------------------------------
-        */
+                    'offering' =>
+                    $enrollment->offering,
 
-        Storage::disk('public')->put(
-            $path,
-            $pdf->output()
-        );
+                    'workshop' =>
+                    $enrollment
+                        ->offering
+                        ->workshop,
 
-        return $path;
+                    'logoPath' => $logoPath,
+                ]
+            );
+
+            $fileName =
+                'certificate-' .
+                $certificate->certificate_number .
+                '.pdf';
+
+            $path =
+                'certificates/' .
+                $fileName;
+
+            Storage::disk('public')->put(
+                $path,
+                $pdf->output()
+            );
+
+            logger()->info(
+                'Certificate PDF saved',
+                [
+                    'path' => $path,
+                ]
+            );
+
+            return $path;
+        } catch (\Throwable $e) {
+
+            logger()->error(
+                'Certificate PDF generation failed',
+                [
+                    'certificate_id' => $certificate->id ?? null,
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                ]
+            );
+
+            throw $e;
+        }
     }
 
     /*
@@ -6268,7 +6636,13 @@ class WorkshopOfferingService
 
         $offering->update($data);
 
-        return $offering->fresh();
+
+        $fresh = WorkshopOffering::find(
+            $offering->id
+        );
+
+
+        return $fresh ?? $offering;
     }
 
     public function delete(
@@ -6704,6 +7078,59 @@ use App\Http\Controllers\API\V1\WorkshopAttendanceController;
 use App\Http\Controllers\API\V1\MyAttendanceController;
 use App\Http\Controllers\API\V1\WorkshopCertificateController;
 
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
+
+Route::get(
+    '/auth/email/verify/{id}/{hash}',
+    function (
+        Request $request,
+        $id,
+        $hash
+    ) {
+
+        if (! URL::hasValidSignature($request)) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid verification link.',
+            ], 403);
+        }
+
+        $user = User::findOrFail($id);
+
+        if (
+            ! hash_equals(
+                sha1($user->email),
+                $hash
+            )
+        ) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid verification hash.',
+            ], 403);
+        }
+
+        if (! $user->hasVerifiedEmail()) {
+
+            $user->markEmailAsVerified();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Email verified successfully.',
+        ]);
+    }
+)
+    ->name('verification.verify');
+
+Route::get(
+    '/auth/email/status',
+    [AuthController::class, 'emailVerificationStatus']
+)->middleware('auth:sanctum');
+
 Route::prefix('v1')->group(function () {
 
     /*
@@ -6807,6 +7234,13 @@ Route::prefix('v1')->group(function () {
                 Route::apiResource(
                     'sessions',
                     WorkshopSessionController::class
+                );
+                Route::get(
+                    'offering-enrollments/filters',
+                    [
+                        AdminOfferingEnrollmentController::class,
+                        'filters',
+                    ]
                 );
                 Route::get(
                     'offering-enrollments',
@@ -8339,6 +8773,185 @@ return [
         'validate_csrf_token' => ValidateCsrfToken::class,
     ],
 
+];
+
+\`\`\`
+---
+
+## File: config\scramble.php
+\\\$syntax
+<?php
+
+use Dedoc\Scramble\Http\Middleware\RestrictedDocsAccess;
+use Dedoc\Scramble\Support\OperationExtensions\RulesExtractor\Security\MiddlewareAuthSecurityStrategy;
+
+return [
+    /*
+     * Which routes to document. String or array form; use Scramble::routes() for custom selection.
+     *
+     * 'api_path' => [
+     *     'include' => 'api',
+     *     'exclude' => ['api/internal'],
+     * ],
+     *
+     * Without *, patterns match path segments (api matches api and api/users, not apiary).
+     * With *, Str::is is used (e.g. api/v*).
+     *
+     * One static include → default server is /{include} and paths are stripped (/users).
+     * Multiple includes or wildcards → server defaults to / and paths stay full (/api/users).
+     * Override with `servers`, or use Scramble::registerApi() for separate bases.
+     */
+    'api_path' => 'api',
+
+    /*
+     * Your API domain. By default, app domain is used. This is also a part of the default API routes
+     * matcher, so when implementing your own, make sure you use this config if needed.
+     */
+    'api_domain' => null,
+
+    /*
+     * The path where your OpenAPI specification will be exported.
+     */
+    'export_path' => 'api.json',
+
+    'info' => [
+        /*
+         * API version.
+         */
+        'version' => env('API_VERSION', '0.0.1'),
+
+        /*
+         * Description rendered on the home page of the API documentation (`/docs/api`).
+         */
+        'description' => '',
+    ],
+
+    /*
+     * Customize Stoplight Elements UI
+     */
+    'ui' => [
+        /*
+         * Define the title of the documentation's website. App name is used when this config is `null`.
+         */
+        'title' => null,
+
+        /*
+         * Define the theme of the documentation. Available options are `light`, `dark`, and `system`.
+         */
+        'theme' => 'light',
+
+        /*
+         * Hide the `Try It` feature. Enabled by default.
+         */
+        'hide_try_it' => false,
+
+        /*
+         * Hide the schemas in the Table of Contents. Enabled by default.
+         */
+        'hide_schemas' => false,
+
+        /*
+         * URL to an image that displays as a small square logo next to the title, above the table of contents.
+         */
+        'logo' => '',
+
+        /*
+         * Use to fetch the credential policy for the Try It feature. Options are: omit, include (default), and same-origin
+         */
+        'try_it_credentials_policy' => 'include',
+
+        /*
+         * There are three layouts for Elements:
+         * - sidebar - (Elements default) Three-column design with a sidebar that can be resized.
+         * - responsive - Like sidebar, except at small screen sizes it collapses the sidebar into a drawer that can be toggled open.
+         * - stacked - Everything in a single column, making integrations with existing websites that have their own sidebar or other columns already.
+         */
+        'layout' => 'responsive',
+    ],
+
+    /*
+     * The list of servers of the API. By default, when `null`, server URL will be created from
+     * `scramble.api_path` and `scramble.api_domain` config variables. When providing an array, you
+     * will need to specify the local server URL manually (if needed).
+     *
+     * Example of non-default config (final URLs are generated using Laravel `url` helper):
+     *
+     * ```php
+     * 'servers' => [
+     *     'Live' => 'api',
+     *     'Prod' => 'https://scramble.dedoc.co/api',
+     * ],
+     * ```
+     */
+    'servers' => null,
+
+    /**
+     * Determines how Scramble stores the descriptions of enum cases.
+     * Available options:
+     * - 'description' – Case descriptions are stored as the enum schema's description using table formatting.
+     * - 'extension' – Case descriptions are stored in the `x-enumDescriptions` enum schema extension.
+     *
+     *    @see https://redocly.com/docs-legacy/api-reference-docs/specification-extensions/x-enum-descriptions
+     * - false - Case descriptions are ignored.
+     */
+    'enum_cases_description_strategy' => 'description',
+
+    /**
+     * Determines how Scramble stores the names of enum cases.
+     * Available options:
+     * - 'names' – Case names are stored in the `x-enumNames` enum schema extension.
+     * - 'varnames' - Case names are stored in the `x-enum-varnames` enum schema extension.
+     * - false - Case names are not stored.
+     */
+    'enum_cases_names_strategy' => false,
+
+    /**
+     * When Scramble encounters deep objects in query parameters, it flattens the parameters so the generated
+     * OpenAPI document correctly describes the API. Flattening deep query parameters is relevant until
+     * OpenAPI 3.2 is released and query string structure can be described properly.
+     *
+     * For example, this nested validation rule describes the object with `bar` property:
+     * `['foo.bar' => ['required', 'int']]`.
+     *
+     * When `flatten_deep_query_parameters` is `true`, Scramble will document the parameter like so:
+     * `{"name":"foo[bar]", "schema":{"type":"int"}, "required":true}`.
+     *
+     * When `flatten_deep_query_parameters` is `false`, Scramble will document the parameter like so:
+     *  `{"name":"foo", "schema": {"type":"object", "properties":{"bar":{"type": "int"}}, "required": ["bar"]}, "required":true}`.
+     */
+    'flatten_deep_query_parameters' => true,
+
+    'middleware' => [
+        'web',
+        RestrictedDocsAccess::class,
+    ],
+
+    'extensions' => [],
+
+    /*
+     * Automatically document API security (OpenAPI `security` / `securitySchemes`) based on route
+     * middleware.
+     *
+     * Disabled by default. Uncomment the line below to enable `MiddlewareAuthSecurityStrategy`.
+     * When at least one documented route uses middleware matching the configured patterns (by default
+     * `auth` and `auth:*`), bearer auth is applied globally. Routes without matching middleware are
+     * marked as public (`security: []`).
+     *
+     * Set to `null` explicitly to disable. If you already configure security manually via
+     * `afterOpenApiGenerated` / `extendOpenApi`, keep this disabled to avoid duplicate schemes.
+     *
+     * Customize with a class-string or [class, options]:
+     *
+     * 'security_strategy' => [
+     *     \Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy::class,
+     *     [
+     *         'middleware' => ['auth', 'auth:*'],
+     *         'scheme' => \Dedoc\Scramble\Support\Generator\SecurityScheme::http('bearer'),
+     *     ],
+     * ],
+     */
+    'security_strategy' => \Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy::class,
+    // 'security_strategy' => null,
 ];
 
 \`\`\`
@@ -10184,7 +10797,7 @@ class DatabaseSeeder extends Seeder
             WorkshopOfferingEnrollmentSeeder::class,
             WorkshopSessionReservationSeeder::class,
             WorkshopAttendanceSeeder::class,
-            WorkshopCertificateSeeder::class,
+            // WorkshopCertificateSeeder::class,
         ]);
     }
 }
@@ -10351,6 +10964,24 @@ class RolesAndPermissionsSeeder extends Seeder
             'workshop:delete:own',
             /*
             |--------------------------------------------------------------------------
+            | Offerings
+            |--------------------------------------------------------------------------
+            */
+            'offering:read',
+            'offering:create',
+            'offering:update',
+            'offering:delete',
+            /*
+            |--------------------------------------------------------------------------
+            | Sessions
+            |--------------------------------------------------------------------------
+            */
+            'session:read',
+            'session:create',
+            'session:update',
+            'session:delete',
+            /*
+            |--------------------------------------------------------------------------
             | Enrollment
             |--------------------------------------------------------------------------
             */
@@ -10359,10 +10990,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'enrollment:update',
             'enrollment:cancel',
             /*
-|--------------------------------------------------------------------------
-| Attendance
-|--------------------------------------------------------------------------
-*/
+            |--------------------------------------------------------------------------
+            | Attendance
+            |--------------------------------------------------------------------------
+            */
             'attendance:read',
             'attendance:create',
             'attendance:update',
@@ -10376,10 +11007,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'attendance:update:any',
             'attendance:update:own',
             /*
-|--------------------------------------------------------------------------
-| Certificates
-|--------------------------------------------------------------------------
-*/
+            |--------------------------------------------------------------------------
+            | Certificates
+            |--------------------------------------------------------------------------
+            */
             'certificate:read',
             'certificate:create',
             'certificate:download',
@@ -10462,6 +11093,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'workshop:update:own',
             'workshop:delete:own',
 
+            'offering:read',
+
+            'session:read',
+            'session:create',
+            'session:update',
+
             'enrollment:read',
             'enrollment:update',
 
@@ -10497,6 +11134,10 @@ class RolesAndPermissionsSeeder extends Seeder
 
             'workshop:read',
 
+            'offering:read',
+
+            'session:read',
+
             'enrollment:create',
             'enrollment:read',
             'enrollment:cancel',
@@ -10522,6 +11163,10 @@ class RolesAndPermissionsSeeder extends Seeder
 
             'workshop:read',
 
+            'offering:read',
+
+            'session:read',
+
             'enrollment:read',
 
             'review:read',
@@ -10539,8 +11184,13 @@ class RolesAndPermissionsSeeder extends Seeder
             'profile:update',
 
             'user:read',
+
             'workshop:read',
             'workshop:update',
+
+            'offering:read',
+
+            'session:read',
 
             'enrollment:read',
 

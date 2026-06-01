@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -12,7 +12,9 @@ use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class User extends Authenticatable
+use App\Notifications\ResetPasswordNotification;
+
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, HasApiTokens, HasRoles, SoftDeletes;
@@ -41,6 +43,21 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    protected $appends = [
+        'email_verified',
+        'phone_verified',
+    ];
+
+    public function getEmailVerifiedAttribute(): bool
+    {
+        return ! is_null($this->email_verified_at);
+    }
+
+    public function getPhoneVerifiedAttribute(): bool
+    {
+        return ! is_null($this->phone_verified_at);
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -50,6 +67,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'phone_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -62,11 +80,22 @@ class User extends Authenticatable
         );
     }
 
-    public function workshopOfferingEnrollments()
+    public function workshopOfferingEnrollments(): HasMany
     {
         return $this->hasMany(
             WorkshopOfferingEnrollment::class,
             'student_id'
+        );
+    }
+
+    public function sendPasswordResetNotification(
+        $token
+    ): void {
+
+        $this->notify(
+            new ResetPasswordNotification(
+                $token
+            )
         );
     }
 }

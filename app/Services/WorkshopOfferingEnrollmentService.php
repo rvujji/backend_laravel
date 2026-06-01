@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\User;
+use Illuminate\Validation\ValidationException;
+
 use App\Models\WorkshopOffering;
 use App\Models\WorkshopOfferingEnrollment;
 
@@ -11,6 +14,17 @@ class WorkshopOfferingEnrollmentService
         WorkshopOffering $offering,
         int $studentId
     ): WorkshopOfferingEnrollment {
+
+        $user = User::findOrFail($studentId);
+
+        if (! $user->hasVerifiedEmail()) {
+
+            throw ValidationException::withMessages([
+                'email' => [
+                    'Please verify your email before enrolling.'
+                ]
+            ]);
+        }
 
         $enrollment = WorkshopOfferingEnrollment::firstOrCreate(
             [

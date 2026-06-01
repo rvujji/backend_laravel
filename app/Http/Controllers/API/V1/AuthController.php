@@ -14,6 +14,15 @@ use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+
+use App\Http\Requests\ForgotPasswordRequest;
+use App\Http\Requests\ResetPasswordRequest;
+
+use App\Notifications\PasswordChangedNotification;
+use App\Http\Requests\ChangePasswordRequest;
+
 class AuthController extends Controller
 {
     /*
@@ -145,6 +154,160 @@ class AuthController extends Controller
                 $user->getAllPermissions()
                     ->pluck('name'),
             ]
+        );
+    }
+
+    public function emailVerificationStatus(
+        Request $request
+    ) {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        return ApiResponse::success(
+            'Email verification status fetched.',
+            [
+                'verified' => $user->hasVerifiedEmail(),
+                'email_verified_at' => $user->email_verified_at,
+            ]
+        );
+    }
+
+    public function resendVerificationEmail(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->hasVerifiedEmail()) {
+
+            return ApiResponse::success(
+                'Email already verified.'
+            );
+        }
+
+        $user->sendEmailVerificationNotification();
+
+        return ApiResponse::success(
+            'Verification email sent.'
+        );
+    }
+
+    public function forgotPassword(
+        ForgotPasswordRequest $request
+    ): JsonResponse {
+
+        $status =
+            Password::sendResetLink(
+
+                $request->only(
+                    'email'
+                )
+            );
+
+        if (
+            $status !==
+            Password::RESET_LINK_SENT
+        ) {
+
+            return ApiResponse::error(
+                __($status),
+                422
+            );
+        }
+
+        return ApiResponse::success(
+            'Password reset link sent.'
+        );
+    }
+
+    public function resetPassword(
+        ResetPasswordRequest $request
+    ): JsonResponse {
+
+        $status =
+            Password::reset(
+
+                $request->only(
+
+                    'email',
+
+                    'password',
+
+                    'password_confirmation',
+
+                    'token'
+                ),
+
+                function (
+                    $user,
+                    $password
+                ) {
+
+                    $user->forceFill([
+
+                        'password' =>
+                        Hash::make(
+                            $password
+                        ),
+                    ])->save();
+
+                    $user->notify(
+                        new PasswordChangedNotification()
+                    );
+                }
+            );
+
+        if (
+            $status !==
+            Password::PASSWORD_RESET
+        ) {
+
+            return ApiResponse::error(
+                __($status),
+                422
+            );
+        }
+
+        return ApiResponse::success(
+            'Password reset successful.'
+        );
+    }
+
+    /*
+|--------------------------------------------------------------------------
+| CHANGE PASSWORD
+|--------------------------------------------------------------------------
+*/
+
+    public function changePassword(
+        ChangePasswordRequest $request
+    ): JsonResponse {
+
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        if (
+            ! Hash::check(
+                $request->current_password,
+                $user->password
+            )
+        ) {
+
+            return ApiResponse::error(
+                'Current password is incorrect.',
+                422
+            );
+        }
+
+        $user->update([
+
+            'password' =>
+
+            Hash::make(
+                $request->password
+            ),
+        ]);
+
+        return ApiResponse::success(
+            'Password changed successfully.'
         );
     }
 }
