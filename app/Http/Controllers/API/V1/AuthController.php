@@ -105,55 +105,20 @@ class AuthController extends Controller
 
         $user->load('roles');
 
+        $userData = $user->toArray();
+
+        $userData['roles'] =
+            $user->getRoleNames();
+
+        $userData['permissions'] =
+            $user->getAllPermissions()
+            ->pluck('name');
+
         return ApiResponse::success(
 
             'Authenticated user',
 
-            [
-
-                'id' => $user->id,
-
-                'name' => $user->name,
-
-                'email' => $user->email,
-
-                'phone' => $user->phone,
-
-                'status' => $user->status,
-
-                'email_verified_at' =>
-                $user->email_verified_at,
-
-                'phone_verified_at' =>
-                $user->phone_verified_at,
-
-                'last_login_at' =>
-                $user->last_login_at,
-
-                'created_at' =>
-                $user->created_at,
-
-                'updated_at' =>
-                $user->updated_at,
-
-                'deleted_at' =>
-                $user->deleted_at,
-
-                /*
-        |--------------------------------------------------------------------------
-        | RBAC
-        |--------------------------------------------------------------------------
-        */
-
-                'roles' =>
-
-                $user->getRoleNames(),
-
-                'permissions' =>
-
-                $user->getAllPermissions()
-                    ->pluck('name'),
-            ]
+            $userData
         );
     }
 
@@ -282,7 +247,7 @@ class AuthController extends Controller
     ): JsonResponse {
 
         /** @var \App\Models\User $user */
-        $user = auth()->user();
+        $user = request()->user();
 
         if (
             ! Hash::check(

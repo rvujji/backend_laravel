@@ -50,14 +50,14 @@ class Workshop extends Model
         );
     }
 
-    public function getThumbnailUrlAttribute()
+    public function getThumbnailUrlAttribute(): ?string
     {
-        if (!$this->thumbnail) {
+        if (! $this->thumbnail) {
             return null;
         }
 
-        return asset(
-            'storage/' . $this->thumbnail
+        return url(
+            '/api/media/' . $this->thumbnail
         );
     }
 

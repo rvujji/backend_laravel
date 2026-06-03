@@ -23,6 +23,46 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 
 Route::get(
+    '/media/workshops/{file}',
+    function (string $file) {
+
+        $path = storage_path(
+            'app/public/workshops/' . $file
+        );
+
+        abort_unless(
+            file_exists($path),
+            404
+        );
+
+        return response()->file(
+            $path,
+            [
+                'Access-Control-Allow-Origin' => '*',
+                'Access-Control-Allow-Methods' => 'GET',
+                'Access-Control-Allow-Headers' => '*',
+            ]
+        );
+    }
+);
+
+Route::options(
+    '/media/workshops/{filename}',
+    function () {
+
+        return response(
+            '',
+            204,
+            [
+                'Access-Control-Allow-Origin' => '*',
+                'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+                'Access-Control-Allow-Headers' => '*',
+            ]
+        );
+    }
+);
+
+Route::get(
     '/auth/email/verify/{id}/{hash}',
     function (
         Request $request,
